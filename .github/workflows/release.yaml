@@ -94,6 +94,7 @@ jobs:
             patchelf \
             desktop-file-utils \
             pkg-config \
+            imagemagick \
             libgtk-3-dev \
             libglib2.0-dev \
             libgirepository1.0-dev \
@@ -155,7 +156,9 @@ jobs:
           mkdir -p AppDir/usr/bin
 
           cp -a build/linux/x64/release/bundle/. AppDir/usr/bin/
-          cp assets/icon.png AppDir/gamypad.png
+
+          # Resize icon to a supported AppImage resolution
+          magick assets/icon.png -resize 512x512 AppDir/gamypad.png
 
           cat > AppDir/gamypad.desktop <<'EOF'
           [Desktop Entry]
