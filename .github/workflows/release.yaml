@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 1.2.0)"
+        description: "Release version (e.g. 1.0 or 1.0.0)"
         required: true
         type: string
 
@@ -46,7 +46,7 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             VERSION="$INPUT_VERSION"
 
-            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,2}(-[0-9A-Za-z.-]+)?$ ]]; then
               echo "Invalid version: $VERSION"
               exit 1
             fi
@@ -205,11 +205,45 @@ jobs:
 
           chmod +x "release-assets/$APPIMAGE_NAME"
 
-      # Android build
+      # Android setup
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          NDK_VERSION="28.2.13676358"
+
+          echo "Android SDK: $SDK"
+
+          rm -rf "$SDK/ndk/$NDK_VERSION"
+
+          for attempt in 1 2 3; do
+            echo "Installing NDK (attempt $attempt/3)..."
+
+            if "$SDKMANAGER" --install "ndk;$NDK_VERSION"; then
+              break
+            fi
+
+            rm -rf "$SDK/ndk/$NDK_VERSION"
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "NDK installation failed after 3 attempts."
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          test -f "$SDK/ndk/$NDK_VERSION/source.properties"
+
+          echo "NDK installation verified."
 
       - name: Get Android dependencies
         working-directory: gamypad_controller
         run: flutter pub get
+
+      # Android build
 
       - name: Build Android APK and AAB
         working-directory: gamypad_controller
