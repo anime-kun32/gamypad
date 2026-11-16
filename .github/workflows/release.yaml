@@ -158,7 +158,7 @@ jobs:
           cp -a build/linux/x64/release/bundle/. AppDir/usr/bin/
 
           # Resize icon to a supported AppImage resolution
-          magick assets/icon.png -resize 512x512 AppDir/gamypad.png
+          convert assets/icon.png -resize 512x512 AppDir/gamypad.png
 
           cat > AppDir/gamypad.desktop <<'EOF'
           [Desktop Entry]
